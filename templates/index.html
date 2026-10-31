@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Task Manager</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;color:#222}
+  h1{margin-bottom:.2rem} .sub{color:#666;margin-bottom:1.5rem}
+  form.add{display:flex;gap:.5rem;margin-bottom:1.5rem}
+  input[type=text]{flex:1;padding:.6rem;border:1px solid #ccc;border-radius:6px}
+  button{padding:.5rem .9rem;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+  button.gray{background:#6b7280} button.red{background:#dc2626}
+  .task{border:1px solid #e5e7eb;border-radius:8px;padding:.8rem;margin-bottom:.6rem}
+  .task.done .title{text-decoration:line-through;color:#888}
+  .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .title{flex:1;font-weight:600} .flash{background:#fef3c7;padding:.6rem;border-radius:6px;margin-bottom:1rem}
+  small{color:#666}
+</style>
+</head>
+<body>
+<h1>Cloud Task Manager</h1>
+<div class="sub">Flask + PostgreSQL (RDS) + S3 uploads</div>
+
+{% with msgs = get_flashed_messages() %}
+  {% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+
+<form class="add" method="post" action="{{ url_for('add_task') }}">
+  <input type="text" name="title" placeholder="Naya task likhein..." maxlength="200" required>
+  <button type="submit">Add</button>
+</form>
+
+{% for t in tasks %}
+<div class="task {{ 'done' if t.done }}">
+  <div class="row">
+    <span class="title">{{ t.title }}</span>
+    <form method="post" action="{{ url_for('toggle_task', task_id=t.id) }}">
+      <button class="gray" type="submit">{{ 'Undo' if t.done else 'Done' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('delete_task', task_id=t.id) }}"
+          onsubmit="return confirm('Delete this task?')">
+      <button class="red" type="submit">Delete</button>
+    </form>
+  </div>
+  <small>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+  {% if t.file_name %}
+    &middot; <a href="{{ url_for('download', task_id=t.id) }}">{{ t.file_name }}</a>
+  {% elif s3_enabled %}
+    <form method="post" enctype="multipart/form-data"
+          action="{{ url_for('upload', task_id=t.id) }}" style="margin-top:.5rem">
+      <input type="file" name="file" required>
+      <button class="gray" type="submit">Upload</button>
+    </form>
+  {% endif %}
+</div>
+{% else %}
+  <p>Abhi koi task nahi hai.</p>
+{% endfor %}
+</body>
+</html>

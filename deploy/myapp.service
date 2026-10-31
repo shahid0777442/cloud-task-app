@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloud Task Manager (Flask)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/app
+EnvironmentFile=/etc/myapp.env
+ExecStart=/home/ubuntu/app/venv/bin/gunicorn -w 3 -b 127.0.0.1:8000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
